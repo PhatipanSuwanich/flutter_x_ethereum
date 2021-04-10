@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
 
 BigInt toBase(Decimal amount, int decimals) {
   Decimal baseUnit = Decimal.fromInt(10).pow(decimals);
@@ -15,4 +16,9 @@ Decimal toDecimal(BigInt amount, int decimals) {
   d = d / baseUnit;
   print("todec: $d");
   return d;
+}
+
+TextStyle themeText({double size = 20}) {
+  return TextStyle(
+      color: Colors.white, fontWeight: FontWeight.bold, fontSize: size);
 }

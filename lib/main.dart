@@ -3,6 +3,7 @@ import 'dart:js_util';
 import 'package:flutter/material.dart';
 import 'package:flutter_web3_provider/ethereum.dart';
 import 'package:flutter_web3_provider/ethers.dart';
+import 'package:flutter_x_ethereum/ui/dashboard.dart';
 
 import 'utils.dart';
 
@@ -14,11 +15,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter web X Ethereum'),
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter web X Ethereum',
+      home: MyHomePage(),
     );
   }
 }
@@ -35,14 +34,13 @@ class _MyHomePageState extends State<MyHomePage> {
   String selectedAddress;
   Web3Provider web3;
   Future balanceF;
-  Future usdcBalanceF;
 
   @override
   void initState() {
     super.initState();
     if (ethereum != null) {
       web3 = Web3Provider(ethereum);
-      print(ethereum.selectedAddress);
+      selectedAddress = ethereum.selectedAddress;
       balanceF = promiseToFuture(web3.getBalance(ethereum.selectedAddress));
     }
   }
@@ -51,10 +49,41 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        backgroundColor: Colors.black,
+        title: Text("Last Wills and Testament"),
+        actions: [
+          (selectedAddress != null)
+              ? wallet(selectedAddress)
+              : wallet("connect", onclick: () async {
+                  await promiseToFuture(ethereum
+                      .request(RequestParams(method: 'eth_requestAccounts')));
+                  setState(() {
+                    selectedAddress = ethereum.selectedAddress;
+                    balanceF = promiseToFuture(
+                        web3.getBalance(ethereum.selectedAddress));
+                  });
+                }),
+          SizedBox(width: 10),
+        ],
       ),
-      body: Center(
-        child: connectedStuff(),
+      body: Row(
+        children: [
+          Expanded(
+            child: Container(
+              color: Colors.white,
+              width: 100,
+            ),
+            flex: 1,
+          ),
+          Expanded(
+            child: Container(
+              color: Colors.grey,
+              width: 100,
+              child: Dashboard(),
+            ),
+            flex: 2,
+          ),
+        ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
@@ -65,28 +94,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return Column(
       children: [
-        (selectedAddress != null)
-            ? Text(selectedAddress)
-            : RaisedButton(
-                child: Text("Connect Wallet"),
-                onPressed: () async {
-                  var accounts = await promiseToFuture(ethereum
-                      .request(RequestParams(method: 'eth_requestAccounts')));
-                  print(accounts);
-                  String se = ethereum.selectedAddress;
-                  print("selectedAddress: $se");
-                  setState(() {
-                    selectedAddress = se;
-                  });
-                },
-              ),
         SizedBox(height: 10),
         Text("Native balance:"),
         FutureBuilder(
           future: balanceF,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-              return Text("error: ${snapshot.error}");
+              return Text("Connect wallet");
             }
             if (!snapshot.hasData) {
               return CircularProgressIndicator();
@@ -99,4 +113,21 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
   }
+
+  Widget wallet(String titile, {Function onclick}) => TextButton.icon(
+        onPressed: onclick,
+        icon: Icon(
+          Icons.account_balance_wallet,
+          color: Colors.white,
+        ),
+        label: SizedBox(
+          width: 100,
+          child: Text(
+            titile,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: themeText(),
+          ),
+        ),
+      );
 }
